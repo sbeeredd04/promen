@@ -1,0 +1,207 @@
+// Debug mode
+const DEBUG = true;
+
+// Debug logging helper
+function debugLog(message, data = null) {
+  if (DEBUG) {
+    console.log(`[Promen Debug] ${message}`, data || '');
+  }
+}
+
+// Initial state
+const state = {
+  isActive: true,
+  apiKey: null
+};
+
+// Element references
+const elements = {
+  statusIndicator: null,
+  toggleBtn: null,
+  toggleText: null,
+  commandButtons: null,
+  settingsToggleBtn: null,
+  mainView: null,
+  settingsView: null,
+  apiKeyInput: null,
+  saveApiKeyButton: null,
+  apiKeyStatus: null,
+  backButton: null,
+  helpBtn: null,
+  reportBtn: null
+};
+
+// Initialize element references
+function initializeElements() {
+  elements.statusIndicator = document.querySelector('.status-indicator');
+  elements.toggleBtn = document.querySelector('#toggleBtn');
+  elements.toggleText = document.querySelector('.toggle-text');
+  elements.commandButtons = document.querySelectorAll('.command-button');
+  elements.settingsToggleBtn = document.querySelector('#settingsToggleBtn');
+  elements.mainView = document.querySelector('#mainView');
+  elements.settingsView = document.querySelector('#settingsView');
+  elements.apiKeyInput = document.querySelector('#apiKeyInput');
+  elements.saveApiKeyButton = document.querySelector('#saveApiKeyButton');
+  elements.apiKeyStatus = document.querySelector('#apiKeyStatus');
+  elements.backButton = document.querySelector('#backButton');
+  elements.helpBtn = document.querySelector('#helpBtn');
+  elements.reportBtn = document.querySelector('#reportBtn');
+
+  return Object.values(elements).some(el => el !== null);
+}
+
+// Update UI based on state
+function updateUI() {
+  try {
+    // Update status indicator and toggle button
+    if (elements.statusIndicator) {
+      const statusText = elements.statusIndicator.querySelector('span:not(.material-icons)');
+      if (statusText) statusText.textContent = state.isActive ? 'Active' : 'Inactive';
+    }
+
+    if (elements.toggleBtn && elements.toggleText) {
+      elements.toggleText.textContent = state.isActive ? 'Disable' : 'Enable';
+    }
+
+    // Update command buttons
+    if (elements.commandButtons) {
+      elements.commandButtons.forEach(button => {
+        button.disabled = !state.isActive;
+      });
+    }
+
+    // Update API key status
+    updateApiKeyStatus();
+    debugLog('UI updated with state:', state);
+  } catch (error) {
+    debugLog('Error updating UI:', error);
+  }
+}
+
+// Update API key status
+function updateApiKeyStatus() {
+  if (!elements.apiKeyStatus || !elements.apiKeyInput) return;
+
+  if (state.apiKey) {
+    elements.apiKeyStatus.textContent = 'API Key is saved';
+    elements.apiKeyStatus.className = 'status-message success';
+    elements.apiKeyInput.value = state.apiKey;
+  } else {
+    elements.apiKeyStatus.textContent = 'API Key not set';
+    elements.apiKeyStatus.className = 'status-message error';
+    elements.apiKeyInput.value = '';
+  }
+}
+
+// Initialize event listeners
+function initializeEventListeners() {
+  // Toggle extension
+  if (elements.toggleBtn) {
+    elements.toggleBtn.addEventListener('click', () => {
+      state.isActive = !state.isActive;
+      chrome.storage.local.set({ isActive: state.isActive }, () => {
+        debugLog('Extension state toggled:', state.isActive);
+        updateUI();
+      });
+    });
+  }
+
+  // Command buttons
+  if (elements.commandButtons) {
+    elements.commandButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const command = button.dataset.command;
+        debugLog('Command clicked:', command);
+        
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              action: command + '_prompt'
+            }).catch(error => {
+              debugLog('Error sending command:', error);
+            });
+          }
+        });
+      });
+    });
+  }
+
+  // Settings navigation
+  if (elements.settingsToggleBtn && elements.mainView && elements.settingsView) {
+    elements.settingsToggleBtn.addEventListener('click', () => {
+      elements.mainView.style.display = 'none';
+      elements.settingsView.style.display = 'block';
+    });
+  }
+
+  if (elements.backButton && elements.mainView && elements.settingsView) {
+    elements.backButton.addEventListener('click', () => {
+      elements.mainView.style.display = 'block';
+      elements.settingsView.style.display = 'none';
+    });
+  }
+
+  // API Key management
+  if (elements.saveApiKeyButton && elements.apiKeyInput && elements.apiKeyStatus) {
+    elements.saveApiKeyButton.addEventListener('click', () => {
+      const newApiKey = elements.apiKeyInput.value.trim();
+      
+      if (newApiKey) {
+        state.apiKey = newApiKey;
+        chrome.storage.local.set({ apiKey: newApiKey }, () => {
+          elements.apiKeyStatus.textContent = 'API Key saved successfully!';
+          elements.apiKeyStatus.className = 'status-message success';
+          debugLog('API key saved');
+        });
+      } else {
+        state.apiKey = null;
+        chrome.storage.local.remove('apiKey', () => {
+          elements.apiKeyStatus.textContent = 'API Key removed';
+          elements.apiKeyStatus.className = 'status-message info';
+          debugLog('API key removed');
+        });
+      }
+    });
+  }
+
+  // Help and Report buttons
+  if (elements.helpBtn) {
+    elements.helpBtn.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'https://github.com/yourusername/promen/wiki' });
+    });
+  }
+
+  if (elements.reportBtn) {
+    elements.reportBtn.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'https://github.com/yourusername/promen/issues/new' });
+    });
+  }
+}
+
+// Initialize popup
+document.addEventListener('DOMContentLoaded', async () => {
+  debugLog('Initializing extension popup...');
+
+  // Initialize elements
+  if (!initializeElements()) {
+    debugLog('Failed to initialize required elements');
+    return;
+  }
+
+  try {
+    // Load state from storage
+    const result = await chrome.storage.local.get(['isActive', 'apiKey']);
+    
+    // Update state with stored values
+    state.isActive = result.isActive !== false;
+    state.apiKey = result.apiKey || null;
+
+    // Initialize UI and event listeners
+    updateUI();
+    initializeEventListeners();
+
+    debugLog('Extension popup initialized successfully');
+  } catch (error) {
+    debugLog('Error initializing popup:', error);
+  }
+}); 

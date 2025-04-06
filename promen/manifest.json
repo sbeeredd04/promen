@@ -1,0 +1,75 @@
+{
+  "manifest_version": 3,
+  "name": "Promen",
+  "version": "1.0.0",
+  "description": "AI-powered prompt enhancement tool for better writing and coding",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "src/extension-popup/extension-popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": [
+        "styles/theme.css",
+        "styles/autocomplete.css"
+      ],
+      "js": [
+        "src/content-scripts/content-script-loader.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [{
+    "resources": [
+      "styles/*",
+      "src/utils/*",
+      "src/content-scripts/*",
+      "src/popup/*",
+      "src/extension-popup/*",
+      "icons/*"
+    ],
+    "matches": ["<all_urls>"]
+  }],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Toggle Promen"
+    },
+    "enhance_prompt": {
+      "suggested_key": {
+        "default": "Alt+E"
+      },
+      "description": "Enhance current prompt with details"
+    },
+    "rephrase_prompt": {
+      "suggested_key": {
+        "default": "Alt+R"
+      },
+      "description": "Rephrase current prompt"
+    },
+    "agent_prompt": {
+      "suggested_key": {
+        "default": "Alt+A"
+      },
+      "description": "Open Promen Agent chat"
+    }
+  }
+}

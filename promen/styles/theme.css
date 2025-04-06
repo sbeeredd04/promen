@@ -1,0 +1,80 @@
+/* Base theme styles for Promen extension */
+:root {
+  /* Dark theme with neon accents */
+  --promen-bg-dark: #1a1a1a;
+  --promen-bg-darker: #121212;
+  --promen-bg-light: #2a2a2a;
+  --promen-text: #e0e0e0;
+  --promen-text-secondary: #a0a0a0;
+  --promen-accent-cyan: #00f2ff;
+  --promen-accent-magenta: #ff00f2;
+  --promen-border: rgba(255, 255, 255, 0.1);
+  --promen-shadow: rgba(0, 0, 0, 0.3);
+  --promen-glass-bg: rgba(30, 30, 30, 0.7);
+  --promen-glass-border: rgba(255, 255, 255, 0.1);
+  --promen-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Glassmorphism effect */
+.promen-glass {
+  background: var(--promen-glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--promen-glass-border);
+  box-shadow: var(--promen-glass-shadow);
+  border-radius: 8px;
+}
+
+/* Common styles for buttons */
+.promen-button {
+  background: linear-gradient(135deg, var(--promen-accent-cyan), var(--promen-accent-magenta));
+  color: var(--promen-bg-dark);
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 12px;
+}
+
+.promen-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 242, 255, 0.3);
+}
+
+/* Common styles for inputs */
+.promen-input {
+  background: var(--promen-bg-light);
+  border: 1px solid var(--promen-border);
+  border-radius: 4px;
+  padding: 10px 14px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--promen-text);
+}
+
+.promen-input:focus {
+  outline: none;
+  border-color: var(--promen-accent-cyan);
+  box-shadow: 0 0 0 2px rgba(0, 242, 255, 0.2);
+}
+
+/* Neon text effect */
+.promen-neon-text {
+  color: var(--promen-accent-cyan);
+  text-shadow: 0 0 5px rgba(0, 242, 255, 0.5),
+               0 0 10px rgba(0, 242, 255, 0.3),
+               0 0 15px rgba(0, 242, 255, 0.1);
+}
+
+/* Neon border effect */
+.promen-neon-border {
+  border: 1px solid var(--promen-accent-magenta);
+  box-shadow: 0 0 5px rgba(255, 0, 242, 0.5),
+              0 0 10px rgba(255, 0, 242, 0.3),
+              0 0 15px rgba(255, 0, 242, 0.1);
+}

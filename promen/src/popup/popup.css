@@ -1,0 +1,218 @@
+:root {
+  --bg-dark: rgba(10, 10, 10, 0.85);
+  --bg-glass: rgba(255, 255, 255, 0.03);
+  --border-glass: rgba(255, 255, 255, 0.05);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --accent-gradient: linear-gradient(135deg, #00f2ff, #ff00f2);
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --blur-amount: 20px;
+}
+
+body {
+  width: 320px;
+  margin: 0;
+  font-family: 'Ubuntu Mono', monospace;
+  background: var(--bg-dark);
+  background-image: url('../../styles/bg.png');
+  background-size: cover;
+  background-position: center;
+  color: var(--text-primary);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px var(--shadow-color);
+  overflow: hidden;
+}
+
+.popup-header {
+  text-align: center;
+  margin-bottom: 24px;
+  position: relative;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.header-title .material-icons {
+  font-size: 28px;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-title h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.content {
+  padding: 16px;
+  backdrop-filter: blur(var(--blur-amount));
+}
+
+.text-preview {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 20px;
+  max-height: 120px;
+  overflow-y: auto;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.action-group {
+  margin-bottom: 24px;
+}
+
+.action-group-title {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.action-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.promen-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(var(--blur-amount));
+  border-radius: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.promen-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--accent-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.promen-button:hover {
+  transform: translateX(4px);
+  border-color: transparent;
+}
+
+.promen-button:hover::before {
+  opacity: 0.1;
+}
+
+.promen-button > * {
+  position: relative;
+  z-index: 1;
+}
+
+.promen-button .material-icons {
+  font-size: 20px;
+  color: #00f2ff;
+}
+
+/* Agent Chat View */
+.agent-container {
+  padding: 16px;
+  backdrop-filter: blur(var(--blur-amount));
+}
+
+#agentChatHistory {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#agentInput {
+  width: 100%;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-family: inherit;
+}
+
+#agentInput:focus {
+  outline: none;
+  border-color: #00f2ff;
+  box-shadow: 0 0 0 2px rgba(0, 242, 255, 0.1);
+}
+
+#sendAgentMessageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--accent-gradient);
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  color: #121212;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#sendAgentMessageBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 242, 255, 0.3);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content {
+  animation: fadeIn 0.3s ease-out;
+}
