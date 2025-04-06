@@ -12,7 +12,7 @@ function debugLog(message, data) {
 }
 
 // --- Constants ---
-const GEMINI_MODEL = "gemini-1.5-flash"; // Or your preferred model
+const GEMINI_MODEL = "gemini-2.0-flash"; // Or your preferred model
 
 // --- Initialization ---
 chrome.runtime.onInstalled.addListener((details) => {
