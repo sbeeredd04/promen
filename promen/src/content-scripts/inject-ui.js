@@ -77,40 +77,141 @@ async function executeCommand(command) {
   if (!text) return;
 
   try {
-    const response = await chrome.runtime.sendMessage({
-      action: command + '_prompt',
-      text: text
-    });
+    // Show loading state
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'promen-loading';
+    loadingIndicator.textContent = 'Processing...';
+    activeElement.parentNode.appendChild(loadingIndicator);
 
-    if (response.error) {
-      console.error('Command error:', response.error);
+    // Check if extension is still valid
+    try {
+      // First check if the extension is still valid
+      await chrome.runtime.getURL('');
+    } catch (error) {
+      console.error('Extension context invalidated:', error);
+      showError('Extension has been reloaded. Please refresh the page.');
+      loadingIndicator.remove();
       return;
     }
 
-    // Handle the response based on command
-    switch (command) {
-      case 'enhance':
-        if (response.enhanced) {
-          if (activeElement.value !== undefined) {
-            activeElement.value = response.enhanced;
-          } else {
-            activeElement.textContent = response.enhanced;
-          }
+    // Send message to background script with retry logic
+    let response = null;
+    let retries = 3;
+    
+    while (retries > 0 && !response) {
+      try {
+        response = await chrome.runtime.sendMessage({
+          action: command + '_prompt',
+          text: text
+        });
+      } catch (error) {
+        console.error(`Communication error (${retries} retries left):`, error);
+        retries--;
+        
+        if (retries === 0) {
+          showError('Failed to communicate with the extension. Please try again later.');
+          loadingIndicator.remove();
+          return;
         }
-        break;
-      case 'rephrase':
-        if (response.rephrased) {
-          if (activeElement.value !== undefined) {
-            activeElement.value = response.rephrased;
-          } else {
-            activeElement.textContent = response.rephrased;
-          }
-        }
-        break;
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
+
+    // Remove loading indicator
+    loadingIndicator.remove();
+
+    if (response.error) {
+      console.error('Command error:', response.error);
+      showError(response.error);
+      return;
+    }
+
+    // Store original text for rejection
+    const originalText = activeElement.value || activeElement.textContent || '';
+
+    // Update text field with new text
+    if (activeElement.value !== undefined) {
+      activeElement.value = response.text;
+    } else {
+      activeElement.textContent = response.text;
+    }
+
+    // Create buttons container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'promen-ghost-buttons';
+
+    // Add approve/reject buttons with Material Icons
+    const approveBtn = document.createElement('button');
+    approveBtn.className = 'promen-approve-btn';
+    approveBtn.innerHTML = '<span class="material-icons">check</span>';
+    approveBtn.title = 'Accept suggestion';
+
+    const rejectBtn = document.createElement('button');
+    rejectBtn.className = 'promen-reject-btn';
+    rejectBtn.innerHTML = '<span class="material-icons">close</span>';
+    rejectBtn.title = 'Reject suggestion';
+
+    // Add buttons to container
+    buttonContainer.appendChild(approveBtn);
+    buttonContainer.appendChild(rejectBtn);
+
+    // Position buttons above the input
+    const rect = activeElement.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+    // Calculate position to show above the input
+    buttonContainer.style.position = 'absolute';
+    buttonContainer.style.top = `${rect.top + scrollTop - buttonContainer.offsetHeight - 10}px`;
+    buttonContainer.style.right = `${rect.left + scrollLeft}px`;
+    buttonContainer.style.width = 'auto';
+    buttonContainer.style.zIndex = '10000';
+
+    // Add to document
+    document.body.appendChild(buttonContainer);
+
+    // Handle approve/reject
+    approveBtn.addEventListener('click', () => {
+      buttonContainer.remove();
+    });
+
+    rejectBtn.addEventListener('click', () => {
+      // Restore original text
+      if (activeElement.value !== undefined) {
+        activeElement.value = originalText;
+      } else {
+        activeElement.textContent = originalText;
+      }
+      buttonContainer.remove();
+    });
+
   } catch (error) {
     console.error('Failed to execute command:', error);
+    showError('Failed to process request. Please try again.');
   }
+}
+
+// Show error message
+function showError(message) {
+  const errorElement = document.createElement('div');
+  errorElement.className = 'promen-error';
+  errorElement.textContent = message;
+  
+  // Position error message
+  const rect = activeElement.getBoundingClientRect();
+  errorElement.style.position = 'absolute';
+  errorElement.style.top = `${rect.bottom + window.scrollY + 5}px`;
+  errorElement.style.left = `${rect.left + window.scrollX}px`;
+  errorElement.style.zIndex = '10000';
+  
+  document.body.appendChild(errorElement);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    errorElement.remove();
+  }, 3000);
 }
 
 // Show popup
@@ -219,7 +320,7 @@ function updateIconPosition(element) {
     icon.style.position = 'absolute';
     icon.style.top = '8px';
     icon.style.right = '8px';
-    icon.style.zIndex = '999999';
+    icon.style.zIndex = '40';
     
     // Ensure parent has relative positioning
     const parent = element.parentElement;
@@ -259,13 +360,27 @@ export function initialize() {
   // Add styles
   const style = document.createElement('style');
   style.textContent = `
+    :root {
+      --color-almond: #EEE5DA;
+      --color-charcoal: #262424;
+      --color-lavender: #B8B8CA;
+      --color-navy: #1E202C;
+      --color-purple: #462F9F;
+      
+      --text-primary: var(--color-almond);
+      --text-secondary: var(--color-lavender);
+      --bg-dark: rgba(30, 32, 44, 0.95);
+      --bg-glass: rgba(38, 36, 36, 0.1);
+      --border-glass: rgba(184, 184, 202, 0.1);
+      --accent-gradient: linear-gradient(135deg, var(--color-purple), var(--color-lavender));
+    }
+
     .promen-icon-container {
       cursor: pointer;
       padding: 4px;
       border-radius: 6px;
-      background: rgba(18, 18, 18, 0.8);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--bg-dark);
+      border: 1px solid var(--border-glass);
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
@@ -273,33 +388,27 @@ export function initialize() {
     }
     
     .promen-icon-container:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--color-purple);
       transform: translateY(-1px);
     }
     
     .promen-icon-container .material-icons {
       font-size: 20px;
-      background: linear-gradient(135deg, #00f2ff, #ff00f2);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--color-almond);
     }
     
     .promen-popup {
       width: 320px;
-      background: #121212;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-glass);
+      border-radius: 12px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
       padding: 16px;
       font-family: 'Ubuntu Mono', monospace;
-      color: white;
+      color: var(--text-primary);
       opacity: 0;
       transform: translateY(10px);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      pointer-events: auto;
-      visibility: visible;
+      transition: all 0.2s ease-out;
     }
     
     .promen-popup.popup-above {
@@ -320,7 +429,7 @@ export function initialize() {
     .popup-header {
       text-align: center;
       margin-bottom: 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid var(--border-glass);
       padding-bottom: 16px;
     }
     
@@ -340,26 +449,26 @@ export function initialize() {
       margin: 0;
       font-size: 20px;
       font-weight: 700;
-      background: linear-gradient(135deg, #00f2ff, #ff00f2);
+      background: var(--accent-gradient);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     
     .text-preview {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
       border-radius: 8px;
       padding: 12px;
       margin-bottom: 20px;
       max-height: 100px;
       overflow-y: auto;
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.8);
+      color: var(--text-secondary);
     }
     
     .action-group-title {
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--text-secondary);
       margin-bottom: 12px;
     }
     
@@ -373,10 +482,10 @@ export function initialize() {
       gap: 12px;
       width: 100%;
       padding: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
       border-radius: 8px;
-      color: white;
+      color: var(--text-primary);
       cursor: pointer;
       transition: all 0.2s ease;
       font-family: inherit;
@@ -384,23 +493,42 @@ export function initialize() {
     }
     
     .command-button:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--color-purple);
+      border-color: var(--color-purple);
       transform: translateX(4px);
-      border-color: #00f2ff;
     }
     
     .command-button .material-icons {
-      font-size: 20px;
-      color: #00f2ff;
+      color: var(--color-purple);
+    }
+    
+    .command-button:hover .material-icons {
+      color: var(--color-almond);
     }
     
     .command-button .shortcut {
       margin-left: auto;
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
+      color: var(--text-secondary);
       padding: 4px 8px;
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--bg-glass);
       border-radius: 4px;
+    }
+
+    .promen-ghost-buttons {
+      position: absolute;
+      display: flex;
+      gap: 4px;
+      justify-content: flex-end;
+      padding: 4px;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+      animation: buttonsAppear 0.2s ease-out;
+      width: 64px; /* Set width to fit two buttons with gap */
     }
   `;
   document.head.appendChild(style);

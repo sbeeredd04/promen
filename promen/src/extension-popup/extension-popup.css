@@ -1,10 +1,16 @@
 :root {
-  --bg-dark: rgba(10, 10, 10, 0.85);
-  --bg-glass: rgba(255, 255, 255, 0.03);
-  --border-glass: rgba(255, 255, 255, 0.05);
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --accent-gradient: linear-gradient(135deg, #00f2ff, #ff00f2);
+  --color-almond: #EEE5DA;
+  --color-charcoal: #262424;
+  --color-lavender: #B8B8CA;
+  --color-navy: #1E202C;
+  --color-purple: #462F9F;
+  
+  --text-primary: var(--color-almond);
+  --text-secondary: var(--color-lavender);
+  --bg-dark: rgba(30, 32, 44, 0.95);
+  --bg-glass: rgba(38, 36, 36, 0.1);
+  --border-glass: rgba(184, 184, 202, 0.1);
+  --accent-gradient: linear-gradient(135deg, var(--color-purple), var(--color-lavender));
   --shadow-color: rgba(0, 0, 0, 0.4);
   --blur-amount: 20px;
 }

@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "scripting",
-    "storage"
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -26,12 +27,13 @@
       "matches": ["<all_urls>"],
       "css": [
         "styles/theme.css",
-        "styles/autocomplete.css"
+        "styles/autocomplete.css",
+        "src/content-scripts/inject-ui.css"
       ],
       "js": [
         "src/content-scripts/content-script-loader.js"
       ],
-      "run_at": "document_start"
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [{

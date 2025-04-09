@@ -50,6 +50,46 @@ function initializeElements() {
   return Object.values(elements).some(el => el !== null);
 }
 
+// Load API key from storage
+async function loadApiKey() {
+  try {
+    const result = await chrome.storage.local.get(['apiKey']);
+    state.apiKey = result.apiKey || null;
+    debugLog('API key loaded from storage:', state.apiKey ? 'Present' : 'Not found');
+    return state.apiKey;
+  } catch (error) {
+    debugLog('Error loading API key:', error);
+    return null;
+  }
+}
+
+// Save API key to storage
+async function saveApiKey(apiKey) {
+  try {
+    // Save to chrome.storage.local
+    await chrome.storage.local.set({ apiKey });
+    
+    // Update state
+    state.apiKey = apiKey;
+    
+    // Notify background script about API key change
+    try {
+      await chrome.runtime.sendMessage({ 
+        action: 'api_key_updated', 
+        apiKey: apiKey 
+      });
+    } catch (error) {
+      debugLog('Error notifying background script:', error);
+    }
+    
+    debugLog('API key saved to storage:', apiKey ? 'Present' : 'Not found');
+    return true;
+  } catch (error) {
+    debugLog('Error saving API key:', error);
+    return false;
+  }
+}
+
 // Update UI based on state
 function updateUI() {
   try {
@@ -143,23 +183,27 @@ function initializeEventListeners() {
 
   // API Key management
   if (elements.saveApiKeyButton && elements.apiKeyInput && elements.apiKeyStatus) {
-    elements.saveApiKeyButton.addEventListener('click', () => {
+    elements.saveApiKeyButton.addEventListener('click', async () => {
       const newApiKey = elements.apiKeyInput.value.trim();
       
       if (newApiKey) {
-        state.apiKey = newApiKey;
-        chrome.storage.local.set({ apiKey: newApiKey }, () => {
+        const saved = await saveApiKey(newApiKey);
+        if (saved) {
           elements.apiKeyStatus.textContent = 'API Key saved successfully!';
           elements.apiKeyStatus.className = 'status-message success';
-          debugLog('API key saved');
-        });
+        } else {
+          elements.apiKeyStatus.textContent = 'Failed to save API Key';
+          elements.apiKeyStatus.className = 'status-message error';
+        }
       } else {
-        state.apiKey = null;
-        chrome.storage.local.remove('apiKey', () => {
+        const removed = await saveApiKey(null);
+        if (removed) {
           elements.apiKeyStatus.textContent = 'API Key removed';
           elements.apiKeyStatus.className = 'status-message info';
-          debugLog('API key removed');
-        });
+        } else {
+          elements.apiKeyStatus.textContent = 'Failed to remove API Key';
+          elements.apiKeyStatus.className = 'status-message error';
+        }
       }
     });
   }

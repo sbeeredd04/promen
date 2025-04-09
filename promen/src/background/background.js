@@ -1,252 +1,142 @@
-// Import necessary components if using a bundled SDK or module
-// Example: import { GoogleGenerativeAI } from './libs/google-genai.js'; 
-
 // Debug mode
 const DEBUG = true;
 
 // Debug logging helper
-function debugLog(message, data) {
+function debugLog(message, data = null) {
   if (DEBUG) {
-    console.log(`[Promen Background] ${message}`, JSON.stringify(data)); // Stringify for better object logging
+    console.log(`[Promen Debug] ${message}`, data || '');
   }
 }
 
-// --- Constants ---
-const GEMINI_MODEL = "gemini-2.0-flash"; // Or your preferred model
+// Constants
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const API_KEY_PARAM = 'key';
 
-// --- Initialization ---
-chrome.runtime.onInstalled.addListener((details) => {
-  debugLog('onInstalled event', details);
-  chrome.storage.local.set({
-    isActive: true,
-    apiKey: null
-  }, () => {
-    debugLog('Initial state set', { isActive: true, apiKey: null });
-  });
+// State
+let state = {
+  apiKey: null
+};
+
+// Initialize extension
+chrome.runtime.onInstalled.addListener(async () => {
+  debugLog('Extension installed/updated');
+  
+  try {
+    // Load API key from storage
+    const result = await chrome.storage.local.get(['apiKey']);
+    state.apiKey = result.apiKey || null;
+    debugLog('API key loaded on install:', state.apiKey ? 'Present' : 'Not found');
+  } catch (error) {
+    debugLog('Error loading API key on install:', error);
+  }
 });
 
-// --- Utility Functions ---
+// Get API key from storage
 async function getApiKey() {
-  const result = await chrome.storage.local.get('apiKey');
-  return result.apiKey;
+  try {
+    const result = await chrome.storage.local.get(['apiKey']);
+    state.apiKey = result.apiKey || null;
+    debugLog('API key loaded from storage:', state.apiKey ? 'Present' : 'Not found');
+    return state.apiKey;
+  } catch (error) {
+    debugLog('Error loading API key:', error);
+    return null;
+  }
 }
 
-// --- Gemini API Calls (Structured Placeholders) ---
+// Make API request to Gemini
+async function makeGeminiRequest(prompt) {
+  if (!state.apiKey) {
+    debugLog('No API key available');
+    return { error: 'API key not set' };
+  }
 
-// Initialize AI Client (Needs API Key - potentially re-initialize if key changes)
-let genAI = null;
-let generativeModel = null;
+  try {
+    const response = await fetch(`${GEMINI_API_URL}?${API_KEY_PARAM}=${state.apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }]
+      })
+    });
 
-async function initializeGenAI() {
-    const apiKey = await getApiKey();
-    if (apiKey && typeof GoogleGenerativeAI !== 'undefined') { // Check if SDK is loaded
-        try {
-            genAI = new GoogleGenerativeAI(apiKey);
-            generativeModel = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-            debugLog('Gemini AI SDK Initialized successfully', { model: GEMINI_MODEL });
-            return true;
-        } catch (error) {
-            console.error("[Promen Error] Failed to initialize GoogleGenerativeAI:", error);
-            genAI = null;
-            generativeModel = null;
-            return false;
-        }
-    } else {
-        debugLog('Gemini AI SDK NOT Initialized', { hasApiKey: !!apiKey, sdkLoaded: typeof GoogleGenerativeAI !== 'undefined' });
-        genAI = null;
-        generativeModel = null;
-        return false;
-    }
-}
-
-// Re-initialize when API key changes
-chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.apiKey) {
-        debugLog('API Key changed, re-initializing Gemini SDK');
-        initializeGenAI();
-    }
-});
-
-// Placeholder: Function to make the actual API call
-async function generateContentWithGemini(requestPayload) {
-    if (!generativeModel) {
-        debugLog('Attempted API call, but model not initialized. Trying to initialize...');
-        const initialized = await initializeGenAI();
-        if (!initialized) {
-            return { error: "API Key not set or SDK not loaded." };
-        }
+    if (!response.ok) {
+      const error = await response.json();
+      debugLog('API request failed:', error);
+      return { error: 'API request failed: ' + (error.error?.message || 'Unknown error') };
     }
 
-    debugLog('Sending request to Gemini', { model: GEMINI_MODEL, contents: requestPayload.contents });
-
-    try {
-        // Example uses generateContent, adjust if using chat or streaming
-        const result = await generativeModel.generateContent(requestPayload);
-        const response = await result.response; 
-        const text = response.text();
-        debugLog('Received response from Gemini', { text });
-        return { text };
-    } catch (error) {
-        console.error("[Promen Error] Gemini API call failed:", error);
-        // Handle specific API errors (e.g., quota, invalid key) if possible
-        return { error: `Gemini API Error: ${error.message}` };
-    }
-}
-
-// --- Feature Implementations ---
-
-async function handleRephrase(promptText) {
-    const systemInstruction = "You are a concise rephrasing assistant. Given text, rewrite it clearly and simply without changing the core meaning. Do not add explanations or commentary.";
-    const request = {
-        contents: [{ role: "user", parts: [{ text: promptText }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] }
-        // Add generationConfig if needed (temperature, maxTokens, etc.)
-    };
-    const result = await generateContentWithGemini(request);
-    return { rephrased: result.text, error: result.error };
-}
-
-async function handleEnhance(promptText) {
-    const systemInstruction = `You are a prompt enhancement assistant. 
-    Analyze the user's input and transform it into a highly detailed and effective prompt suitable for a large language model. 
-    Identify key areas where more information is needed and represent these as clearly marked fill-in-the-blank sections like [Specify Target Audience] or [Describe Desired Tone]. 
-    Structure the output logically. Do not add conversational filler.`;
-    const request = {
-        contents: [{ role: "user", parts: [{ text: promptText }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] }
-    };
-    const result = await generateContentWithGemini(request);
-    return { enhanced: result.text, error: result.error };
-}
-
-async function handleAgent(chatHistory) {
-    // For agent, we'd likely use the chat interface if SDK is available
-    // Placeholder using generateContent for now
-    const systemInstruction = "You are a helpful AI assistant named Promen Agent, skilled at helping users craft the perfect prompt by asking clarifying questions. Keep responses conversational and focused on gathering necessary details.";
+    const data = await response.json();
+    debugLog('API response received:', data);
     
-    // Format history for generateContent (or use chat.sendMessage if SDK works)
-    const formattedContents = chatHistory.map(msg => ({ 
-        role: msg.role === 'user' ? 'user' : 'model', 
-        parts: [{ text: msg.content }] 
-    }));
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return { error: 'Invalid API response format' };
+    }
 
-    const request = {
-        contents: formattedContents,
-        systemInstruction: { parts: [{ text: systemInstruction }] }
-    };
-    const result = await generateContentWithGemini(request);
-    return { response: result.text, error: result.error };
+    return { text: data.candidates[0].content.parts[0].text };
+  } catch (error) {
+    debugLog('Error making API request:', error);
+    return { error: 'Failed to make API request: ' + error.message };
+  }
 }
 
-// --- Message Listener ---
+// Handle messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    debugLog('Message received', { message, sender });
-  
-    (async () => {
-        let response = {};
-        const text = message.text || ''; // Get text from message if provided
+  debugLog('Message received:', message);
 
-        try {
-            switch (message.action) {
-                case 'rephrase_prompt':
-                    if (!text) { response = { error: "No text provided for rephrasing." }; break; }
-                    response = await handleRephrase(text);
-                    break;
-                
-                case 'enhance_prompt':
-                    if (!text) { response = { error: "No text provided for enhancement." }; break; }
-                    response = await handleEnhance(text);
-                    break;
-                
-                case 'agent_prompt':
-                    // Needs history management - simplified for now
-                    debugLog('Agent command received - placeholder');
-                    response = { agentStarted: true, initialMessage: "Hi! How can I help you craft the perfect prompt?" }; 
-                    // const agentResponse = await handleAgent([{ role: 'user', content: text }]);
-                    // response = { response: agentResponse.response, error: agentResponse.error };
-                    break;
-                    
-                default:
-                    debugLog('Unknown action received in background', { action: message.action });
-                    response = { error: 'Unknown background action' };
+  // Handle API key updates
+  if (message.action === 'api_key_updated') {
+    state.apiKey = message.apiKey;
+    debugLog('API key updated:', state.apiKey ? 'Present' : 'Not found');
+    return;
+  }
+
+  // Handle content script requests
+  if (sender.tab) {
+    (async () => {
+      try {
+        // Ensure we have the latest API key
+        await getApiKey();
+
+        if (!state.apiKey) {
+          sendResponse({ error: 'API key not set' });
+          return;
+        }
+
+        let prompt = '';
+        switch (message.action) {
+          case 'rephrase_prompt':
+            if (!message.text) {
+              sendResponse({ error: 'No text provided' });
+              return;
             }
-        } catch (error) {
-            console.error('[Promen Error] Failed to handle message:', error);
-            response = { error: `Internal background error: ${error.message}` };
-        }
-        debugLog('Sending response', response);
-        sendResponse(response);
-    })();
-  
-    return true; // Keep connection open for async response
-});
-
-// --- Command Listener ---
-chrome.commands.onCommand.addListener((command) => {
-    debugLog('Keyboard command received', { command });
-  
-    (async () => {
-        // Get active tab to send message back for context/insertion
-        let activeTab;
-        try {
-             const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-             activeTab = tabs[0];
-        } catch (err) {
-             console.error("[Promen Error] Could not query active tab for command:", err);
-             return;
-        }
-
-        if (!activeTab || !activeTab.id) {
-            console.error("[Promen Error] No active tab found for command processing.");
+            prompt = `Rephrase the following text to be more clear and concise: "${message.text}"`;
+            break;
+          case 'enhance_prompt':
+            if (!message.text) {
+              sendResponse({ error: 'No text provided' });
+              return;
+            }
+            prompt = `Enhance the following text to be more detailed and professional: "${message.text}"`;
+            break;
+          default:
+            sendResponse({ error: 'Unknown action' });
             return;
         }
-        
-        // Request text content from content script before calling API
-        try {
-            const content = await chrome.tabs.sendMessage(activeTab.id, { action: 'get_selected_or_focused_text' });
-            const textToProcess = content?.text || ""; // Use selected/focused text
-            debugLog('Text received from content script for command', { command, textLength: textToProcess.length });
 
-            let apiResponse = {};
-            switch (command) {
-                case 'enhance_prompt':
-                    apiResponse = await handleEnhance(textToProcess);
-                    break;
-                case 'rephrase_prompt':
-                    apiResponse = await handleRephrase(textToProcess);
-                    break;
-                case 'agent_prompt':
-                    debugLog('Agent command via shortcut - TBD');
-                    // Perhaps open the popup? chrome.action.openPopup();
-                    apiResponse = { info: 'Agent shortcut TBD' }; // Placeholder
-                    break;
-                default:
-                     apiResponse = { error: 'Unknown command' };
-            }
-
-            // Send the result back to the content script
-            if (activeTab && activeTab.id && command !== 'agent_prompt') { // Don't send agent response back yet
-                 debugLog('Sending API response back to content script', { command, apiResponse });
-                 chrome.tabs.sendMessage(activeTab.id, { 
-                     action: 'api_response', 
-                     command: command,
-                     response: apiResponse 
-                 });
-            }
-
-        } catch (error) {
-            console.error(`[Promen Error] Failed processing command ${command}:`, error);
-            // Maybe notify the user via the content script?
-             if (activeTab && activeTab.id) {
-                 chrome.tabs.sendMessage(activeTab.id, { 
-                     action: 'api_response', 
-                     command: command, 
-                     response: { error: `Error processing shortcut: ${error.message}` } 
-                 });
-             }
-        }
+        const result = await makeGeminiRequest(prompt);
+        sendResponse(result);
+      } catch (error) {
+        debugLog('Error processing message:', error);
+        sendResponse({ error: 'Internal error: ' + error.message });
+      }
     })();
-});
-
-// Attempt to initialize SDK on startup
-initializeGenAI(); 
+    return true; // Will respond asynchronously
+  }
+}); 
