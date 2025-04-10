@@ -116,14 +116,45 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               sendResponse({ error: 'No text provided' });
               return;
             }
-            prompt = `Rephrase the following text to be more clear and concise: "${message.text}"`;
+            prompt = `Act as a Prompt Rephraser. Your goal is to rewrite the user's initial query to make it clearer, more concise, and more effective for an AI model.
+
+Analyze the user's query. Identify areas where clarity, brevity, or precision can be improved.
+
+Rewrite the query, incorporating improvements such as:
+* **Clarity:** Remove ambiguity and make the intent clear.
+* **Conciseness:** Eliminate unnecessary words while preserving meaning.
+* **Precision:** Use precise language that accurately conveys the request.
+* **Structure:** Organize the query in a logical flow.
+
+Your output must be ONLY the rephrased prompt itself. Do not include any introductory phrases, explanations, or any text other than the final, rephrased prompt ready for use. Start the output directly with the rephrased prompt text.
+
+--- User Query Below ---
+
+${message.text}`;
             break;
           case 'enhance_prompt':
             if (!message.text) {
               sendResponse({ error: 'No text provided' });
               return;
             }
-            prompt = `Enhance the following text to be more detailed and professional: "${message.text}"`;
+            prompt = `Act as a Prompt Enhancer. Your goal is to rewrite and expand upon the user's initial query to make it significantly more detailed, specific, and effective for an AI model.
+
+Analyze the user's query. Identify areas where more detail, context, clarification, or specific instruction is needed for a high-quality result.
+
+Rewrite the query, incorporating enhancements such as:
+* **Specificity:** Add concrete details (e.g., specific objects, numbers, names, features).
+* **Context:** Provide background information or the purpose of the request.
+* **Format/Style:** Define the desired output format (e.g., list, paragraph, code block), tone (e.g., formal, casual, enthusiastic), or style (e.g., photorealistic, cartoonish, academic).
+* **Constraints:** Include limitations or specific requirements (e.g., word count, elements to avoid, technical specifications).
+* **Perspective/Audience:** Specify the viewpoint or intended audience if relevant.
+
+If critical information is missing that only the original user can provide (e.g., specific preferences, key details, subjective choices), insert a placeholder formatted exactly as \`[user part: Describe the missing information needed]\`. Alternatively, you may use \`________ (Describe the missing information needed)\` if it fits the sentence structure better, but prioritize the \`[user part: ...]\` format. Use these placeholders judiciously only for essential gaps that require user input.
+
+**Crucially, your output must be ONLY the enhanced prompt itself.** Do not include any introductory phrases ("Here is the enhanced prompt:", "Okay, here you go:", etc.), explanations, apologies, confirmations, or any text other than the final, enhanced prompt ready for use. Start the output directly with the enhanced prompt text.
+
+--- User Query Below ---
+
+${message.text}`;
             break;
           default:
             sendResponse({ error: 'Unknown action' });
