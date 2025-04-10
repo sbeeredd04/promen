@@ -20,21 +20,34 @@ body {
   margin: 0;
   font-family: 'Ubuntu Mono', monospace;
   background: var(--bg-dark);
-  background-image: url('../../styles/bg.png');
-  background-size: cover;
-  background-position: center;
   color: var(--text-primary);
   border-radius: 16px;
   box-shadow: 0 8px 32px var(--shadow-color);
   overflow: hidden;
 }
 
+.logo-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.beta-tag {
+  background: var(--accent-gradient);
+  color: #000;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-left: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .extension-popup {
   padding: 16px;
-  backdrop-filter: blur(var(--blur-amount));
+  background-color: #000;
   min-height: 400px;
   display: flex;
   flex-direction: column;
+  border-radius: 16px;
 }
 
 /* Header Styles */

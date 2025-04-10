@@ -1,6 +1,5 @@
 // Import utilities
 import { isTextInput } from '../utils/dom-helper.js';
-
 // Debug mode
 const DEBUG = true;
 
@@ -19,7 +18,16 @@ let activeElement = null;
 function createIcon() {
   const icon = document.createElement('div');
   icon.className = 'promen-icon-container';
-  icon.innerHTML = '<span class="material-icons">edit_note</span>';
+
+  const img = document.createElement('img');
+  img.src = chrome.runtime.getURL('icons/icon16.png');
+  img.alt = 'Promen Icon';
+  img.className = 'injected-icon';
+  img.style.width = '16px'; // Ensure size is appropriate
+  img.style.height = '16px';
+
+  icon.appendChild(img);
+
   return icon;
 }
 
@@ -31,8 +39,11 @@ function createPopup() {
   popup.innerHTML = `
     <div class="popup-header">
       <div class="header-title">
-        <img src="chrome-extension://${chrome.runtime.id}/icons/icon16.png" alt="Promen" class="logo">
-        <h2>AI Prompt Assistant</h2>
+        <div class="header-left">
+          <img src="${chrome.runtime.getURL('icons/icon16.png')}" alt="Promen" class="logo">
+          <h2>Promen</h2>
+        </div>
+        <span class="beta-tag">BETA</span>
       </div>
     </div>
     
@@ -59,7 +70,7 @@ function createPopup() {
           <button class="command-button" data-command="agent" data-shortcut="Alt+A">
             <span class="material-icons">smart_toy</span>
             Agent
-            <span class="shortcut">Alt+A</span>
+            <span class="shortcut">Coming Soon !</span>
           </button>
         </div>
       </div>
@@ -318,7 +329,7 @@ function updateIconPosition(element) {
     
     // Position icon
     icon.style.position = 'absolute';
-    icon.style.top = '8px';
+    icon.style.top = '2px';
     icon.style.right = '8px';
     icon.style.zIndex = '40';
     
@@ -377,10 +388,7 @@ export function initialize() {
 
     .promen-icon-container {
       cursor: pointer;
-      padding: 4px;
-      border-radius: 6px;
-      background: var(--bg-dark);
-      border: 1px solid var(--border-glass);
+      border-radius: 8px;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
@@ -393,13 +401,13 @@ export function initialize() {
     }
     
     .promen-icon-container .material-icons {
-      font-size: 20px;
+      font-size: 32px;
       color: var(--color-almond);
     }
     
     .promen-popup {
       width: 320px;
-      background: var(--bg-dark);
+      background: #000;
       border: 1px solid var(--border-glass);
       border-radius: 12px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
@@ -436,8 +444,14 @@ export function initialize() {
     .header-title {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       gap: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     
     .header-title .logo {
@@ -452,6 +466,19 @@ export function initialize() {
       background: var(--accent-gradient);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+    }
+
+    .beta-tag {
+      background: transparent;
+      color: var(--color-lavendar);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      font-family: 'Ubuntu Mono', monospace;
+      font-style: italic;
+      border: 2px solid var(--color-purple);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
     
     .text-preview {
