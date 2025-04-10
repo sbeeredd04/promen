@@ -538,6 +538,20 @@ export function initialize() {
     updateIconPosition(e.target);
   });
 
+  // Listen for messages to show or hide the icon
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'show_icon') {
+      if (activeElement) {
+        updateIconPosition(activeElement);
+      }
+    } else if (message.action === 'hide_icon') {
+      if (currentIcon) {
+        currentIcon.remove();
+        currentIcon = null;
+      }
+    }
+  });
+
   debugLog('inject-ui initialization complete.');
 }
 

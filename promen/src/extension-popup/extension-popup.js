@@ -142,6 +142,17 @@ function initializeEventListeners() {
       chrome.storage.local.set({ isActive: state.isActive }, () => {
         debugLog('Extension state toggled:', state.isActive);
         updateUI();
+
+        // Notify content script to update icon visibility
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              action: state.isActive ? 'show_icon' : 'hide_icon'
+            }).catch(error => {
+              debugLog('Error sending icon visibility command:', error);
+            });
+          }
+        });
       });
     });
   }
