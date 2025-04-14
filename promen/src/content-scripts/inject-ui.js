@@ -36,6 +36,12 @@ function createPopup() {
   const popup = document.createElement('div');
   popup.className = 'promen-popup';
   
+  // Detect OS for shortcut display
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const enhanceShortcut = isMac ? 'Cmd+Shift+L' : 'Ctrl+Shift+L';
+  const rephraseShortcut = isMac ? 'Cmd+Shift+K' : 'Ctrl+Shift+K';
+  const agentShortcut = isMac ? 'Cmd+Shift+U' : 'Ctrl+Shift+U';
+
   popup.innerHTML = `
     <div class="popup-header">
       <div class="header-title">
@@ -53,24 +59,24 @@ function createPopup() {
       <div class="action-group">
         <div class="action-group-title">Actions</div>
         <div class="action-row">
-          <button class="command-button" data-command="enhance" data-shortcut="Alt+E">
+          <button class="command-button" data-command="enhance">
             <span class="material-icons">auto_fix_high</span>
             Enhance
-            <span class="shortcut">Alt+E</span>
+            <span class="shortcut">${enhanceShortcut}</span>
           </button>
         </div>
         <div class="action-row">
-          <button class="command-button" data-command="rephrase" data-shortcut="Alt+R">
+          <button class="command-button" data-command="rephrase">
             <span class="material-icons">autorenew</span>
             Rephrase
-            <span class="shortcut">Alt+R</span>
+            <span class="shortcut">${rephraseShortcut}</span>
           </button>
         </div>
         <div class="action-row">
-          <button class="command-button" data-command="agent" data-shortcut="Alt+A">
+          <button class="command-button" data-command="agent">
             <span class="material-icons">smart_toy</span>
             Agent
-            <span class="shortcut">Coming Soon !</span>
+            <span class="shortcut">${agentShortcut} (Soon!)</span>
           </button>
         </div>
       </div>
@@ -289,21 +295,26 @@ function showPopup(iconElement) {
 
   // Handle keyboard shortcuts
   document.addEventListener('keydown', function handleShortcut(e) {
-    if (e.altKey) {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const modifierKey = isMac ? e.metaKey : e.ctrlKey;
+
+    if (modifierKey && e.shiftKey) {
       const key = e.key.toUpperCase();
       let command = null;
       
       switch (key) {
-        case 'E': command = 'enhance'; break;
-        case 'R': command = 'rephrase'; break;
-        case 'A': command = 'agent'; break;
+        case 'L': command = 'enhance'; break;
+        case 'K': command = 'rephrase'; break;
+        case 'U': command = 'agent'; break; // Agent shortcut
       }
       
       if (command) {
         e.preventDefault();
         executeCommand(command);
-        popup.remove();
-        currentPopup = null;
+        if (currentPopup) {
+          currentPopup.remove();
+          currentPopup = null;
+        }
         document.removeEventListener('keydown', handleShortcut);
       }
     }
