@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="../../styles/theme.css">
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+</head>
+<body>
+  <div class="popup-header">
+    <img src="../../icons/icon16.png" alt="Promen" class="logo">
+    <h2>Promen</h2>
+    <span class="beta-tag">Beta</span>
+    <div class="header-actions">
+      <button class="header-action-btn" id="websiteBtn" title="Visit Prom10 Website">
+        <span class="material-icons">language</span>
+      </button>
+      <button class="header-action-btn" id="settingsBtn" title="Settings">
+        <span class="material-icons">settings</span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="content">
+    <!-- Text Preview Section -->
+    <div class="text-preview" id="textPreview"></div>
+    
+    <!-- Main Actions Section -->
+    <div class="action-group">
+      <div class="action-group-title">Actions</div>
+      <div class="action-row">
+        <button id="enhanceBtn" class="promen-button">
+          <span class="material-icons">auto_fix_high</span> Enhance
+        </button>
+      </div>
+      <div class="action-row">
+        <button id="rephraseBtn" class="promen-button">
+          <span class="material-icons">autorenew</span> Rephrase
+        </button>
+      </div>
+      <div class="action-row">
+        <button id="agentBtn" class="promen-button">
+          <span class="material-icons">smart_toy</span> Agent
+        </button>
+      </div>
+      <div class="action-row">
+        <button id="reportBugBtn" class="promen-button">
+          <span class="material-icons">bug_report</span> Report Bug
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Agent Chat View (hidden by default) -->
+  <div class="agent-container" id="agentPanel" style="display: none;">
+    <h2>Agent Chat</h2>
+    <div id="agentChatHistory"></div>
+    <input type="text" id="agentInput" placeholder="Talk to the agent...">
+    <button id="sendAgentMessageBtn">
+      <span class="material-icons">send</span>
+    </button>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="extension-popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+</head>
+<body>
+  <div class="extension-popup">
+    <div class="popup-header">
+      <div class="header-title">
+        <img src="../../icons/icon16.png" alt="Logo" class="logo-icon">
+        <h1>Promen</h1>
+        <span class="beta-tag">Beta</span>
+      </div>
+      <div class="header-subtitle">AI Prompt Assistant</div>
+      <button id="settingsToggleBtn" class="settings-toggle-button" title="Settings">
+        <span class="material-icons">settings</span>
+      </button>
+    </div>
+
+    <div class="popup-content">
+      <!-- Main View -->
+      <div id="mainView">
+        <!-- Status Section -->
+        <div class="status-section">
+          <div class="status-indicator">
+            <span class="material-icons status-icon">circle</span>
+            <span>Active</span>
+          </div>
+          <button id="toggleBtn" class="toggle-button">
+            <span class="material-icons">power_settings_new</span>
+            <span class="toggle-text">Disable</span>
+          </button>
+        </div>
+
+        <!-- Commands Section -->
+        <div class="commands-section">
+          <h2>Quick Commands</h2>
+          <div class="command-list">
+            <button class="command-button" data-command="enhance">
+              <span class="material-icons">auto_fix_high</span>
+              Enhance
+              <span class="shortcut">Alt+E</span>
+            </button>
+            <button class="command-button" data-command="rephrase">
+              <span class="material-icons">autorenew</span>
+              Rephrase
+              <span class="shortcut">Alt+R</span>
+            </button>
+            <button class="command-button" data-command="agent">
+              <span class="material-icons">smart_toy</span>
+              Agent
+              <span class="shortcut">Coming Soon !</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="popup-footer">
+          <button id="websiteBtn" class="footer-button">
+            <span class="material-icons">language</span>
+            Website
+          </button>
+          <button id="reportBtn" class="footer-button">
+            <span class="material-icons">bug_report</span>
+            Report Issue
+          </button>
+        </div>
+      </div>
+
+      <!-- Settings View -->
+      <div id="settingsView" style="display: none;">
+        <h2>Settings</h2>
+        <div class="settings-content">
+          <label for="apiKeyInput">Gemini API Key</label>
+          <div class="api-key-input-group">
+            <input type="password" id="apiKeyInput" placeholder="Enter your API key">
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="api-key-link" title="Get API Key">
+              <span class="material-icons">key</span>
+            </a>
+          </div>
+          <button id="saveApiKeyButton" class="save-button">
+            <span class="material-icons">save</span>
+            Save Key
+          </button>
+          <p id="apiKeyStatus" class="status-message"></p>
+          <button id="backButton" class="back-button">
+            <span class="material-icons">arrow_back</span>
+            Back
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="extension-popup.js" type="module"></script>
+</body>
+</html> 
