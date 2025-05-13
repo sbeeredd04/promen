@@ -1,12 +1,5 @@
-// Debug mode
-const DEBUG = true;
-
-// Debug logging helper
-function debugLog(message, data = null) {
-  if (DEBUG) {
-    console.log(`[Promen Debug] ${message}`, data || '');
-  }
-}
+// Import debug utilities
+import { DEBUG, debugLog, errorLog } from '../utils/debug-config.js';
 
 // Initial state
 const state = {
@@ -27,7 +20,7 @@ const elements = {
   saveApiKeyButton: null,
   apiKeyStatus: null,
   backButton: null,
-  helpBtn: null,
+  websiteBtn: null,
   reportBtn: null
 };
 
@@ -44,7 +37,7 @@ function initializeElements() {
   elements.saveApiKeyButton = document.querySelector('#saveApiKeyButton');
   elements.apiKeyStatus = document.querySelector('#apiKeyStatus');
   elements.backButton = document.querySelector('#backButton');
-  elements.helpBtn = document.querySelector('#helpBtn');
+  elements.websiteBtn = document.querySelector('#websiteBtn');
   elements.reportBtn = document.querySelector('#reportBtn');
 
   return Object.values(elements).some(el => el !== null);
@@ -58,7 +51,7 @@ async function loadApiKey() {
     debugLog('API key loaded from storage:', state.apiKey ? 'Present' : 'Not found');
     return state.apiKey;
   } catch (error) {
-    debugLog('Error loading API key:', error);
+    errorLog('Error loading API key:', error);
     return null;
   }
 }
@@ -79,13 +72,13 @@ async function saveApiKey(apiKey) {
         apiKey: apiKey 
       });
     } catch (error) {
-      debugLog('Error notifying background script:', error);
+      errorLog('Error notifying background script:', error);
     }
     
     debugLog('API key saved to storage:', apiKey ? 'Present' : 'Not found');
     return true;
   } catch (error) {
-    debugLog('Error saving API key:', error);
+    errorLog('Error saving API key:', error);
     return false;
   }
 }
@@ -114,7 +107,7 @@ function updateUI() {
     updateApiKeyStatus();
     debugLog('UI updated with state:', state);
   } catch (error) {
-    debugLog('Error updating UI:', error);
+    errorLog('Error updating UI:', error);
   }
 }
 
@@ -149,7 +142,7 @@ function initializeEventListeners() {
             chrome.tabs.sendMessage(tabs[0].id, {
               action: state.isActive ? 'show_icon' : 'hide_icon'
             }).catch(error => {
-              debugLog('Error sending icon visibility command:', error);
+              errorLog('Error sending icon visibility command:', error);
             });
           }
         });
@@ -169,7 +162,7 @@ function initializeEventListeners() {
             chrome.tabs.sendMessage(tabs[0].id, {
               action: command + '_prompt'
             }).catch(error => {
-              debugLog('Error sending command:', error);
+              errorLog('Error sending command:', error);
             });
           }
         });
@@ -220,15 +213,15 @@ function initializeEventListeners() {
   }
 
   // Help and Report buttons
-  if (elements.helpBtn) {
-    elements.helpBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://github.com/yourusername/promen/wiki' });
+  if (elements.websiteBtn) {
+    elements.websiteBtn.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'https://prom10.vercel.app/' });
     });
   }
 
   if (elements.reportBtn) {
     elements.reportBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://github.com/yourusername/promen/issues/new' });
+      chrome.tabs.create({ url: 'https://forms.gle/L5Xd8z1ugnpvr6Zz8' });
     });
   }
 }

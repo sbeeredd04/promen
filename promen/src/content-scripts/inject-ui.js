@@ -1,7 +1,7 @@
 // Import utilities
 import { isTextInput } from '../utils/dom-helper.js';
 // Debug mode
-const DEBUG = true;
+const DEBUG = false;
 
 // Debug logging helper
 function debugLog(message, data) {
@@ -86,6 +86,61 @@ function createPopup() {
   return popup;
 }
 
+// Function to handle user part replacements
+function setupUserPartInteractions(element) {
+  // Only works on contenteditable elements directly
+  if (!element.isContentEditable) return;
+  
+  const userParts = element.querySelectorAll('.promen-user-part');
+  debugLog('Found user parts for interaction:', userParts.length);
+  
+  userParts.forEach(userPart => {
+    userPart.setAttribute('contenteditable', 'true');
+    
+    // Focus and select all text when clicking on the user part
+    userPart.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(userPart);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
+    
+    // Remove the placeholder when user starts typing
+    userPart.addEventListener('input', () => {
+      const text = userPart.textContent.trim();
+      
+      // Check if the user has modified the placeholder text
+      if (!text.includes('[USER PART:') && !text.includes('[user part:')) {
+        debugLog('User part modified, removing special styling');
+        // Replace the span with just its text content
+        const replacementText = document.createTextNode(userPart.textContent);
+        userPart.parentNode.replaceChild(replacementText, userPart);
+      }
+    });
+    
+    // Handle enter key to complete editing
+    userPart.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        userPart.blur();
+        
+        const text = userPart.textContent.trim();
+        
+        // Check if the user has modified the placeholder text
+        if (!text.includes('[USER PART:') && !text.includes('[user part:')) {
+          debugLog('User part completed with Enter, removing special styling');
+          // Replace the span with just its text content
+          const replacementText = document.createTextNode(userPart.textContent);
+          userPart.parentNode.replaceChild(replacementText, userPart);
+        }
+      }
+    });
+  });
+}
+
 // Handle command execution
 async function executeCommand(command) {
   if (!activeElement) return;
@@ -147,12 +202,149 @@ async function executeCommand(command) {
 
     // Store original text for rejection
     const originalText = activeElement.value || activeElement.textContent || '';
-
+    
     // Update text field with new text
     if (activeElement.value !== undefined) {
-      activeElement.value = response.text;
+      // For regular input/textarea fields, we need to handle the HTML differently
+      // Create a temporary div to extract the text content while preserving line breaks
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = response.text;
+      
+      // For normal text inputs, we still need to add style to make USER PART stand out
+      // First extract all user parts text from spans
+      const userParts = tempDiv.querySelectorAll('.promen-user-part');
+      const userPartTexts = [];
+      
+      debugLog('Found user parts in input field response:', userParts.length);
+      
+      // Replace the spans with their text content in the temp div
+      userParts.forEach(userPart => {
+        // Extract the original user part text (already in uppercase from the background script)
+        const userPartText = userPart.textContent;
+        userPartTexts.push(userPartText);
+        
+        // For regular inputs, we need plain text but still want to make it visually distinct
+        // with brackets, uppercase and spacing consistent
+        const formattedUserPart = userPartText.replace(/\[\s*USER\s*PART\s*:\s*(.*?)\]/gi, '[USER PART: $1]');
+        
+        // Replace the span with properly formatted text
+        const textNode = document.createTextNode(formattedUserPart);
+        userPart.parentNode.replaceChild(textNode, userPart);
+      });
+      
+      // Handle special formatting for textarea fields
+      let plainText = '';
+      
+      if (activeElement.tagName === 'TEXTAREA') {
+        // Keep better formatting for lists in textareas
+        
+        // First handle code blocks - we want to preserve their formatting
+        const codeBlocks = tempDiv.querySelectorAll('.promen-code-block');
+        const savedCodeBlocks = [];
+        
+        codeBlocks.forEach((block, index) => {
+          // Save the code block with a placeholder
+          const placeholder = `__CODE_BLOCK_${index}__`;
+          savedCodeBlocks.push({
+            placeholder,
+            content: block.textContent
+          });
+          
+          // Replace with the placeholder
+          const textNode = document.createTextNode(placeholder);
+          block.parentNode.replaceChild(textNode, block);
+        });
+        
+        // Process list items
+        const listItems = tempDiv.querySelectorAll('.list-item');
+        listItems.forEach(item => {
+          // Replace with properly formatted text
+          const textContent = item.textContent.trim();
+          const paragraph = document.createElement('p');
+          paragraph.textContent = textContent;
+          item.parentNode.replaceChild(paragraph, item);
+        });
+        
+        // Process bullet items
+        const bulletItems = tempDiv.querySelectorAll('.bullet-item');
+        bulletItems.forEach(item => {
+          // Replace with properly formatted text
+          const textContent = item.textContent.trim();
+          const paragraph = document.createElement('p');
+          paragraph.textContent = textContent;
+          item.parentNode.replaceChild(paragraph, item);
+        });
+        
+        // Convert HTML to text with proper line breaks
+        plainText = tempDiv.innerHTML
+          // Replace div and p tags with proper line breaks
+          .replace(/<\/(div|p)>/gi, '\n')
+          .replace(/<(div|p|br)[^>]*>/gi, '')
+          // Replace all HTML tags
+          .replace(/<[^>]*>/g, '')
+          // Clean up multiple line breaks
+          .replace(/\n\s*\n/g, '\n\n')
+          // Decode HTML entities
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&')
+          // Trim extra whitespace
+          .trim();
+        
+        // Now restore the code blocks with proper formatting
+        savedCodeBlocks.forEach(({ placeholder, content }) => {
+          // Add code block markers and format with proper spacing
+          const formattedCode = '\n\n```\n' + content + '\n```\n\n';
+          plainText = plainText.replace(placeholder, formattedCode);
+        });
+          
+        debugLog('Processed textarea format with code blocks:', { 
+          original: response.text.substring(0, 100) + '...',
+          plainText: plainText.substring(0, 100) + '...',
+          codeBlocks: savedCodeBlocks.length
+        });
+      } else {
+        // For regular input fields, use a simpler approach
+        const textExtractor = document.createElement('div');
+        textExtractor.innerHTML = tempDiv.innerHTML;
+        plainText = textExtractor.textContent;
+      }
+      
+      // Set the plain text value
+      activeElement.value = plainText;
+      
+      // For textarea and input elements, we can't add styling directly
+      // Instead, we'll create a visual overlay with the styled text if needed
+      if (userPartTexts.length > 0 && (activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'INPUT')) {
+        // Create a notification about user parts that need attention
+        const userPartNotification = document.createElement('div');
+        userPartNotification.className = 'promen-user-part-notification';
+        userPartNotification.textContent = `Your prompt contains ${userPartTexts.length} part(s) that need your input. Look for text in [USER PART: ...] format.`;
+        userPartNotification.style.position = 'absolute';
+        userPartNotification.style.top = `${activeElement.getBoundingClientRect().bottom + window.scrollY + 5}px`;
+        userPartNotification.style.left = `${activeElement.getBoundingClientRect().left + window.scrollX}px`;
+        userPartNotification.style.background = 'rgba(255, 77, 77, 0.1)';
+        userPartNotification.style.color = '#ff4d4d';
+        userPartNotification.style.padding = '8px 12px';
+        userPartNotification.style.borderRadius = '4px';
+        userPartNotification.style.fontSize = '14px';
+        userPartNotification.style.zIndex = '10000';
+        userPartNotification.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        
+        document.body.appendChild(userPartNotification);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+          userPartNotification.remove();
+        }, 5000);
+      }
     } else {
-      activeElement.textContent = response.text;
+      // For contenteditable elements, we can use HTML content directly
+      activeElement.innerHTML = response.text;
+      
+      // Setup interactions for user parts
+      setupUserPartInteractions(activeElement);
     }
 
     // Create buttons container
@@ -199,7 +391,13 @@ async function executeCommand(command) {
       if (activeElement.value !== undefined) {
         activeElement.value = originalText;
       } else {
-        activeElement.textContent = originalText;
+        // For contenteditable elements, maintain proper HTML formatting for the original text
+        // Check if the original text has HTML tags
+        if (/<[a-z][\s\S]*>/i.test(originalText)) {
+          activeElement.innerHTML = originalText;
+        } else {
+          activeElement.textContent = originalText;
+        }
       }
       buttonContainer.remove();
     });

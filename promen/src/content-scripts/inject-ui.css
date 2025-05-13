@@ -38,6 +38,43 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Styling for user parts that need to be filled in */
+.promen-user-part {
+  color: #ff4d4d;
+  font-weight: 600;
+  background-color: rgba(255, 77, 77, 0.15);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin: 0 2px;
+  cursor: text;
+  transition: all 0.2s ease;
+  border-bottom: 2px dashed #ff4d4d;
+  border-left: 2px solid #ff4d4d;
+  text-transform: none;
+  font-style: normal;
+  letter-spacing: normal;
+}
+
+.promen-user-part:hover {
+  background-color: rgba(255, 77, 77, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(255, 77, 77, 0.2);
+}
+
+/* Notification for user parts in non-contenteditable fields */
+.promen-user-part-notification {
+  background-color: rgba(255, 77, 77, 0.15);
+  border: 1px solid #ff4d4d;
+  border-left: 4px solid #ff4d4d;
+  color: #ff4d4d;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.3s ease;
+}
+
 .promen-ghost-buttons {
   position: absolute;
   display: flex;
@@ -142,4 +179,34 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Styling for formatted list items */
+.list-item {
+  display: block;
+  margin: 8px 0;
+  padding-left: 8px;
+  border-left: 2px solid rgba(70, 130, 180, 0.4);
+}
+
+.bullet-item {
+  display: block;
+  margin: 6px 0;
+  padding-left: 8px;
+}
+
+/* Styling for code blocks */
+.promen-code-block {
+  display: block;
+  background-color: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 10px 0;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: auto;
 } 

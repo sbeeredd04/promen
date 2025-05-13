@@ -1,3 +1,6 @@
+// Import debug utilities
+import { DEBUG, debugLog, errorLog } from '../utils/debug-config.js';
+
 // Get current text from storage
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize UI elements
@@ -10,6 +13,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const agentOptions = document.getElementById('agentOptions');
   const agentBackBtn = document.getElementById('agentBackBtn');
   const agentNextBtn = document.getElementById('agentNextBtn');
+  const websiteBtn = document.getElementById('websiteBtn');
+  const reportBugBtn = document.getElementById('reportBugBtn');
+  
+  // Add event listeners for new buttons
+  websiteBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://prom10.vercel.app/' });
+  });
+  
+  reportBugBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://forms.gle/L5Xd8z1ugnpvr6Zz8' });
+  });
   
   // Agent questions and options
   const agentQuestions = [

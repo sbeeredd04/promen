@@ -1,5 +1,5 @@
 // Debug mode
-const DEBUG = true;
+const DEBUG = false;
 
 // Debug logging helper
 function debugLog(message, data) {
